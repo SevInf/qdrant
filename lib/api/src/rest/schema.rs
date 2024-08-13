@@ -5,7 +5,9 @@ use schemars::JsonSchema;
 use segment::common::utils::MaybeOneOrMany;
 use segment::data_types::order_by::OrderBy;
 use segment::json_path::JsonPath;
-use segment::types::{Filter, SearchParams, ShardKey, WithPayloadInterface, WithVector};
+use segment::types::{
+    Filter, PointIdType, SearchParams, ShardKey, WithPayloadInterface, WithVector,
+};
 use serde::{Deserialize, Serialize};
 use sparse::common::sparse_vector::SparseVector;
 use validator::Validate;
@@ -650,4 +652,40 @@ pub struct QueryGroupsRequest {
     pub search_group_request: QueryGroupsRequestInternal,
 
     pub shard_key: Option<ShardKeySelector>,
+}
+
+#[derive(Deserialize, Serialize, JsonSchema, Validate, Clone, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct SearchMatrixRequestInternal {
+    /// Look only for points which satisfies this conditions
+    #[validate]
+    pub filter: Option<Filter>,
+    /// How many points to select and search within.
+    #[validate(range(min = 1))]
+    pub sample: usize,
+    /// How many neighbours per sample to find
+    #[validate(range(min = 1))]
+    pub limit: usize,
+    /// Define which vector name to use for querying. If missing, the default vector is used.
+    pub using: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, JsonSchema, Validate, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct SearchMatrixRequest {
+    #[serde(flatten)]
+    #[validate]
+    pub search_request: SearchMatrixRequestInternal,
+    /// Specify in which shards to look for the points, if not specified - look in all shards
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shard_key: Option<ShardKeySelector>,
+}
+
+#[derive(Debug, Serialize, JsonSchema, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct SearchMatrixResponse {
+    /// Sampled point ids
+    pub sample_ids: Vec<PointIdType>,
+    /// Nearest points for each sampled points
+    pub nearest: Vec<Vec<ScoredPoint>>,
 }

@@ -1,6 +1,8 @@
 use actix_web::rt::time::Instant;
 use actix_web::{post, web, Responder};
 use actix_web_validator::{Json, Path, Query};
+use api::rest::{SearchMatrixRequest, SearchMatrixResponse};
+use collection::collection::distance_matrix::CollectionSearchMatrixRequest;
 use collection::operations::shard_selector_internal::ShardSelectorInternal;
 use collection::operations::types::{
     CoreSearchRequest, SearchGroupsRequest, SearchRequest, SearchRequestBatch,
@@ -13,7 +15,7 @@ use super::CollectionPath;
 use crate::actix::auth::ActixAccess;
 use crate::actix::helpers::process_response;
 use crate::common::points::{
-    do_core_search_points, do_search_batch_points, do_search_point_groups,
+    do_core_search_points, do_search_batch_points, do_search_point_groups, do_search_points_matrix,
 };
 
 #[post("/collections/{name}/points/search")]
@@ -143,9 +145,56 @@ async fn search_point_groups(
     process_response(response, timing)
 }
 
+#[post("/collections/{name}/points/search/matrix")]
+async fn search_points_matrix(
+    dispatcher: web::Data<Dispatcher>,
+    collection: Path<CollectionPath>,
+    request: Json<SearchMatrixRequest>,
+    params: Query<ReadParams>,
+    ActixAccess(access): ActixAccess,
+) -> impl Responder {
+    let timing = Instant::now();
+
+    let SearchMatrixRequest {
+        search_request,
+        shard_key,
+    } = request.into_inner();
+
+    let shard_selection = match shard_key {
+        None => ShardSelectorInternal::All,
+        Some(shard_keys) => shard_keys.into(),
+    };
+
+    let response = do_search_points_matrix(
+        dispatcher.toc(&access),
+        &collection.name,
+        CollectionSearchMatrixRequest::from(search_request),
+        params.consistency,
+        shard_selection,
+        access,
+        params.timeout(),
+    )
+    .await
+    .map(|matrix_response| SearchMatrixResponse {
+        sample_ids: matrix_response.sample_ids,
+        nearest: matrix_response
+            .nearest
+            .into_iter()
+            .map(|row| {
+                row.into_iter()
+                    .map(api::rest::ScoredPoint::from)
+                    .collect_vec()
+            })
+            .collect_vec(),
+    });
+
+    process_response(response, timing)
+}
+
 // Configure services
 pub fn config_search_api(cfg: &mut web::ServiceConfig) {
     cfg.service(search_points)
         .service(batch_search_points)
-        .service(search_point_groups);
+        .service(search_point_groups)
+        .service(search_points_matrix);
 }

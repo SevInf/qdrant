@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::time::Duration;
 
-use segment::data_types::vectors::NamedVectorStruct;
+use api::rest::SearchMatrixRequestInternal;
+use segment::data_types::vectors::{NamedVectorStruct, DEFAULT_VECTOR_NAME};
 use segment::types::{Condition, Filter, HasIdCondition, PointIdType, ScoredPoint, WithVector};
 
 use crate::collection::Collection;
@@ -12,26 +13,61 @@ use crate::operations::types::{CollectionResult, CoreSearchRequest, CoreSearchRe
 use crate::operations::universal_query::shard_query::{Sample, ScoringQuery, ShardQueryRequest};
 
 #[derive(Debug, Default)]
-pub struct DistanceMatrixResponse {
+pub struct CollectionSearchMatrixResponse {
     pub sample_ids: Vec<PointIdType>,   // sampled point ids
     pub nearest: Vec<Vec<ScoredPoint>>, // nearest points for each sampled point
+}
+
+/// Internal representation of the distance matrix request, used to convert from REST and gRPC.
+pub struct CollectionSearchMatrixRequest {
+    pub sample_size: usize,
+    pub limit_per_sample: usize,
+    pub filter: Option<Filter>,
+    pub using: String,
+}
+
+// TODO offer different output format
+#[allow(dead_code)]
+enum CollectionSearchMatrixFormat {
+    Matrix,
+    Csr,
+    Pairs,
+}
+
+impl From<SearchMatrixRequestInternal> for CollectionSearchMatrixRequest {
+    fn from(request: SearchMatrixRequestInternal) -> Self {
+        let SearchMatrixRequestInternal {
+            sample,
+            limit,
+            filter,
+            using,
+        } = request;
+        Self {
+            sample_size: sample,
+            limit_per_sample: limit,
+            filter,
+            using: using.unwrap_or(DEFAULT_VECTOR_NAME.to_string()),
+        }
+    }
 }
 
 // TODO introduce HasVector condition to avoid iterative sampling
 const SAMPLING_TRIES: usize = 3;
 
 impl Collection {
-    #[allow(clippy::too_many_arguments)] // TODO use request object
-    pub async fn distance_matrix(
+    pub async fn search_points_matrix(
         &self,
-        sample_size: usize,
-        limit_per_sample: usize,
-        filter: Option<&Filter>,
-        using: String,
-        shard_selector: ShardSelectorInternal,
+        request: CollectionSearchMatrixRequest,
+        shard_selection: ShardSelectorInternal,
         read_consistency: Option<ReadConsistency>,
         timeout: Option<Duration>,
-    ) -> CollectionResult<DistanceMatrixResponse> {
+    ) -> CollectionResult<CollectionSearchMatrixResponse> {
+        let CollectionSearchMatrixRequest {
+            sample_size,
+            limit_per_sample,
+            filter,
+            using,
+        } = request;
         if limit_per_sample == 0 || sample_size == 0 {
             return Ok(Default::default());
         }
@@ -40,6 +76,7 @@ impl Collection {
 
         // Sampling multiple times because we might not have enough points with the named vector
         for _ in 0..SAMPLING_TRIES {
+            let filter = filter.clone();
             // check if we have enough samples with right named vector
             if sampled_points.len() >= sample_size {
                 break;
@@ -48,12 +85,11 @@ impl Collection {
             // exclude already sampled points
             let exclude_ids: HashSet<_> = sampled_points.iter().map(|(id, _)| *id).collect();
             let filter = if exclude_ids.is_empty() {
-                filter.cloned()
+                filter
             } else {
                 let exclude_ids = Filter::new_must_not(Condition::HasId(exclude_ids.into()));
                 Some(
                     filter
-                        .as_ref()
                         .map(|filter| filter.merge(&exclude_ids))
                         .unwrap_or(exclude_ids),
                 )
@@ -76,7 +112,7 @@ impl Collection {
                 .query(
                     sampling_query.clone(),
                     read_consistency,
-                    shard_selector.clone(),
+                    shard_selection.clone(),
                     timeout,
                 )
                 .await?;
@@ -132,10 +168,10 @@ impl Collection {
         // run batch search request
         let batch_request = CoreSearchRequestBatch { searches };
         let nearest = self
-            .core_search_batch(batch_request, read_consistency, shard_selector, timeout)
+            .core_search_batch(batch_request, read_consistency, shard_selection, timeout)
             .await?;
 
-        Ok(DistanceMatrixResponse {
+        Ok(CollectionSearchMatrixResponse {
             sample_ids: sampled_point_ids,
             nearest,
         })
