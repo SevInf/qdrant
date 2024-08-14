@@ -544,14 +544,14 @@ ACTION_ACCESS = {
         "POST /collections/{collection_name}/points/search/matrix/offsets",
         "",
     ),
-    "query_points_matrix_rows": EndpointAccess(
+    "search_points_matrix_rows": EndpointAccess(
         True,
         True,
         True,
         "POST /collections/{collection_name}/points/search/matrix/rows",
         "",
     ),
-    "query_points_matrix_pairs": EndpointAccess(
+    "search_points_matrix_pairs": EndpointAccess(
         True,
         True,
         True,
@@ -1803,6 +1803,30 @@ def test_query_points_groups():
             "group_size": 2,
             "group_by": FIELD_NAME
         },
+    )
+
+def test_search_points_matrix_offsets():
+    check_access(
+        "search_points_matrix_offsets",
+        rest_request={"sample": 10, "limit": 2},
+        path_params={"collection_name": COLL_NAME},
+        grpc_request={},
+    )
+
+def test_search_points_matrix_rows():
+    check_access(
+        "search_points_matrix_rows",
+        rest_request={"sample": 10, "limit": 2},
+        path_params={"collection_name": COLL_NAME},
+        grpc_request={},
+    )
+
+def test_search_points_matrix_pairs():
+    check_access(
+        "search_points_matrix_pairs",
+        rest_request={"sample": 10, "limit": 2},
+        path_params={"collection_name": COLL_NAME},
+        grpc_request={},
     )
 
 def test_root():
