@@ -12642,6 +12642,186 @@
             ]
           }
         }
+      },
+      "SearchMatrixRequest": {
+        "type": "object",
+        "required": [
+          "limit",
+          "sample"
+        ],
+        "properties": {
+          "shard_key": {
+            "description": "Specify in which shards to look for the points, if not specified - look in all shards",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShardKeySelector"
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          "filter": {
+            "description": "Look only for points which satisfies this conditions",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Filter"
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          "sample": {
+            "description": "How many points to select and search within.",
+            "type": "integer",
+            "format": "uint",
+            "minimum": 1
+          },
+          "limit": {
+            "description": "How many neighbours per sample to find",
+            "type": "integer",
+            "format": "uint",
+            "minimum": 1
+          },
+          "using": {
+            "description": "Define which vector name to use for querying. If missing, the default vector is used.",
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SearchMatrixOffsetsResponse": {
+        "type": "object",
+        "required": [
+          "ids",
+          "offsets_col",
+          "offsets_row",
+          "scores"
+        ],
+        "properties": {
+          "offsets_row": {
+            "description": "Row coordinates of the CRS matrix",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            }
+          },
+          "offsets_col": {
+            "description": "Column coordinates ids of the matrix",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            }
+          },
+          "scores": {
+            "description": "Scores associate with coordinates",
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "float"
+            }
+          },
+          "ids": {
+            "description": "Ids of the points in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtendedPointId"
+            }
+          }
+        }
+      },
+      "SearchMatrixPairsResponse": {
+        "type": "object",
+        "required": [
+          "ids",
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "description": "Rows of pairs (id offset, score)",
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": [
+                  {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "format": "float"
+                  }
+                ],
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          },
+          "ids": {
+            "description": "Ids of the points in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtendedPointId"
+            }
+          }
+        }
+      },
+      "SearchMatrixRowsResponse": {
+        "type": "object",
+        "required": [
+          "ids",
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "description": "Rows of scores",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchMatrixRow"
+            }
+          },
+          "ids": {
+            "description": "Ids of the points in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExtendedPointId"
+            }
+          }
+        }
+      },
+      "SearchMatrixRow": {
+        "type": "object",
+        "required": [
+          "offsets_id",
+          "scores"
+        ],
+        "properties": {
+          "offsets_id": {
+            "description": "Offsets of the id of the points in order",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            }
+          },
+          "scores": {
+            "description": "Scores of the points",
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "float"
+            }
+          }
+        }
       }
     }
   }

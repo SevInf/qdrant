@@ -101,13 +101,13 @@ fn score_example() -> common::types::ScoreType {
 #[derive(Serialize, JsonSchema, Clone, Debug)]
 pub struct ScoredPoint {
     /// Point id
-    pub id: segment::types::PointIdType,
+    pub id: PointIdType,
     /// Point version
     #[schemars(example = "version_example")]
     pub version: segment::types::SeqNumberType,
     /// Points vector distance to the query vector
     #[schemars(example = "score_example")]
-    pub score: common::types::ScoreType,
+    pub score: ScoreType,
     /// Payload - values assigned to the point
     #[serde(skip_serializing_if = "Option::is_none")]
     pub payload: Option<segment::types::Payload>,
@@ -116,7 +116,7 @@ pub struct ScoredPoint {
     pub vector: Option<VectorStruct>,
     /// Shard Key
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub shard_key: Option<segment::types::ShardKey>,
+    pub shard_key: Option<ShardKey>,
     /// Order-by value
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order_value: Option<segment::data_types::order_by::OrderValue>,
@@ -654,7 +654,7 @@ pub struct QueryGroupsRequest {
     pub shard_key: Option<ShardKeySelector>,
 }
 
-#[derive(Deserialize, Serialize, JsonSchema, Validate, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, JsonSchema, Validate, Debug, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub struct SearchMatrixRequestInternal {
     /// Look only for points which satisfies this conditions
@@ -670,7 +670,7 @@ pub struct SearchMatrixRequestInternal {
     pub using: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, JsonSchema, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, JsonSchema, Validate)]
 #[serde(rename_all = "snake_case")]
 pub struct SearchMatrixRequest {
     #[serde(flatten)]
@@ -681,11 +681,42 @@ pub struct SearchMatrixRequest {
     pub shard_key: Option<ShardKeySelector>,
 }
 
-#[derive(Debug, Serialize, JsonSchema, Clone)]
+#[derive(Debug, Serialize, JsonSchema, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub struct SearchMatrixResponse {
-    /// Sampled point ids
-    pub sample_ids: Vec<PointIdType>,
-    /// Nearest points for each sampled points
-    pub nearest: Vec<Vec<ScoredPoint>>,
+pub struct SearchMatrixOffsetsResponse {
+    /// Row coordinates of the CRS matrix
+    pub offsets_row: Vec<u64>,
+    /// Column coordinates ids of the matrix
+    pub offsets_col: Vec<u64>,
+    /// Scores associate with coordinates
+    pub scores: Vec<ScoreType>,
+    /// Ids of the points in order
+    pub ids: Vec<PointIdType>,
+}
+
+#[derive(Debug, Serialize, JsonSchema, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct SearchMatrixPairsResponse {
+    /// Rows of pairs (id offset, score)
+    pub rows: Vec<Vec<(u64, ScoreType)>>,
+    /// Ids of the points in order
+    pub ids: Vec<PointIdType>,
+}
+
+#[derive(Debug, Serialize, JsonSchema, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct SearchMatrixRow {
+    /// Offsets of the id of the points in order
+    pub offsets_id: Vec<u64>,
+    /// Scores of the points
+    pub scores: Vec<ScoreType>,
+}
+
+#[derive(Debug, Serialize, JsonSchema, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct SearchMatrixRowsResponse {
+    /// Rows of scores
+    pub rows: Vec<SearchMatrixRow>,
+    /// Ids of the points in order
+    pub ids: Vec<PointIdType>,
 }
