@@ -537,6 +537,27 @@ ACTION_ACCESS = {
         "POST /collections/{collection_name}/points/query/groups",
         "qdrant.Points/QueryGroups",
     ),
+    "search_points_matrix_offsets": EndpointAccess(
+        True,
+        True,
+        True,
+        "POST /collections/{collection_name}/points/search/matrix/offsets",
+        "",
+    ),
+    "query_points_matrix_rows": EndpointAccess(
+        True,
+        True,
+        True,
+        "POST /collections/{collection_name}/points/search/matrix/rows",
+        "",
+    ),
+    "query_points_matrix_pairs": EndpointAccess(
+        True,
+        True,
+        True,
+        "POST /collections/{collection_name}/points/search/matrix/pairs",
+        "",
+    ),
     ### Service ###
     "root": EndpointAccess(True, True, True, "GET /", "qdrant.Qdrant/HealthCheck"),
     "readyz": EndpointAccess(True, True, True, "GET /readyz", "grpc.health.v1.Health/Check"),

@@ -29,14 +29,6 @@ pub struct CollectionSearchMatrixRequest {
     pub using: String,
 }
 
-// TODO offer different output format
-#[allow(dead_code)]
-enum CollectionSearchMatrixFormat {
-    Matrix,
-    Csr,
-    Pairs,
-}
-
 impl From<SearchMatrixRequestInternal> for CollectionSearchMatrixRequest {
     fn from(request: SearchMatrixRequestInternal) -> Self {
         let SearchMatrixRequestInternal {
