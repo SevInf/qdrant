@@ -542,21 +542,18 @@ ACTION_ACCESS = {
         True,
         True,
         "POST /collections/{collection_name}/points/search/matrix/offsets",
-        "",
     ),
     "search_points_matrix_rows": EndpointAccess(
         True,
         True,
         True,
         "POST /collections/{collection_name}/points/search/matrix/rows",
-        "",
     ),
     "search_points_matrix_pairs": EndpointAccess(
         True,
         True,
         True,
-        "POST /collections/{collection_name}/points/search/matrix/pairs",
-        "",
+        "POST /collections/{collection_name}/points/search/matrix/pairs"
     ),
     ### Service ###
     "root": EndpointAccess(True, True, True, "GET /", "qdrant.Qdrant/HealthCheck"),
@@ -1810,7 +1807,7 @@ def test_search_points_matrix_offsets():
         "search_points_matrix_offsets",
         rest_request={"sample": 10, "limit": 2},
         path_params={"collection_name": COLL_NAME},
-        grpc_request={},
+        grpc_request={"collection_name": COLL_NAME, "sample": 10, "limit": 2},
     )
 
 def test_search_points_matrix_rows():
@@ -1818,7 +1815,7 @@ def test_search_points_matrix_rows():
         "search_points_matrix_rows",
         rest_request={"sample": 10, "limit": 2},
         path_params={"collection_name": COLL_NAME},
-        grpc_request={},
+        grpc_request={"collection_name": COLL_NAME, "sample": 10, "limit": 2},
     )
 
 def test_search_points_matrix_pairs():
@@ -1826,7 +1823,7 @@ def test_search_points_matrix_pairs():
         "search_points_matrix_pairs",
         rest_request={"sample": 10, "limit": 2},
         path_params={"collection_name": COLL_NAME},
-        grpc_request={},
+        grpc_request={"collection_name": COLL_NAME, "sample": 10, "limit": 2},
     )
 
 def test_root():
