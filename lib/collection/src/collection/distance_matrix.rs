@@ -219,6 +219,8 @@ impl Collection {
         }
 
         sampled_points.truncate(sample_size);
+        // sort by id for a deterministic order
+        sampled_points.sort_unstable_by(|(id1, _), (id2, _)| id1.cmp(id2));
         let sampled_point_ids: Vec<_> = sampled_points.iter().map(|(id, _)| *id).collect();
 
         // Perform nearest neighbor search for each sampled point
